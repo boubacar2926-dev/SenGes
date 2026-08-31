@@ -19,7 +19,11 @@ class DatabaseSeeder extends Seeder
             return;
         }
 
-        User::firstOrCreate(
+        // TEMPORAIRE : updateOrCreate (au lieu de firstOrCreate) pour forcer
+        // une rotation ponctuelle du mot de passe admin compromis, sans accès
+        // shell. À repasser en firstOrCreate juste après, sinon chaque
+        // redéploiement écrasera silencieusement le mot de passe.
+        User::updateOrCreate(
             ['email' => $email],
             [
                 'name' => 'Admin',
