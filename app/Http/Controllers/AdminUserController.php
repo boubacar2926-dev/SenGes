@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreCommercantRequest;
+use App\Http\Requests\UpdateCommercantRequest;
 use App\Models\User;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
 
 class AdminUserController extends Controller
 {
@@ -19,18 +19,14 @@ class AdminUserController extends Controller
         return view('admin.users.create');
     }
 
-    public function store(Request $request)
+    public function store(StoreCommercantRequest $request)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
-            'password' => 'required|min:6|confirmed',
-        ]);
+        $data = $request->validated();
 
         User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => bcrypt($request->password),
+            'name' => $data['name'],
+            'email' => $data['email'],
+            'password' => bcrypt($data['password']),
             'role' => 'commercant',
             'suspended' => false,
         ]);
@@ -46,21 +42,13 @@ class AdminUserController extends Controller
         return view('admin.users.edit', compact('user'));
     }
 
-    public function update(Request $request, User $user)
+    public function update(UpdateCommercantRequest $request, User $user)
     {
         if ($user->role !== 'commercant') {
             abort(403);
         }
 
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,' . $user->id,
-        ]);
-
-        $user->update([
-            'name' => $request->name,
-            'email' => $request->email,
-        ]);
+        $user->update($request->validated());
 
         return redirect()->route('admin.users.index')->with('success', 'Commerçant mis à jour.');
     }

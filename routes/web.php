@@ -25,11 +25,6 @@ Route::get('/', function () {
 
 });
 
-// Route du dashboard (accessible après connexion)
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
-
 // Gestion du profil utilisateur (accessible à tous les utilisateurs connectés)
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -73,7 +68,7 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 */
 Route::middleware(['auth', 'role:commercant'])->group(function () {
     Route::get('/commercant/dashboard', [CommercantController::class, 'index'])->name('commercant.dashboard');
-    Route::resource('produits', ProduitController::class);
+    Route::resource('produits', ProduitController::class)->except(['show']);
 
     // Routes pour les transactions
     Route::resource('transactions', TransactionController::class)->except(['show']);
@@ -84,8 +79,8 @@ Route::middleware(['auth', 'role:commercant'])->group(function () {
 
 });
 
-// Correction de la route du Dashboard des commerçants
-Route::middleware(['auth', 'role:admin,commercant'])->get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+// Route du dashboard (accessible après connexion, contenu selon le rôle)
+Route::middleware(['auth', 'verified', 'role:admin,commercant'])->get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
 
 require __DIR__.'/auth.php';

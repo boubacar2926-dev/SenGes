@@ -49,6 +49,14 @@ class LoginRequest extends FormRequest
             ]);
         }
 
+        if (Auth::user()->suspended) {
+            Auth::logout();
+
+            throw ValidationException::withMessages([
+                'email' => 'Ce compte a été suspendu. Contactez un administrateur.',
+            ]);
+        }
+
         RateLimiter::clear($this->throttleKey());
     }
 

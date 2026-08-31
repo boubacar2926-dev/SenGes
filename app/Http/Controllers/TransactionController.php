@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreTransactionRequest;
+use App\Http\Requests\UpdateTransactionRequest;
 use App\Models\Transaction;
 use App\Models\Produit;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class TransactionController extends Controller
 {
@@ -24,31 +26,35 @@ class TransactionController extends Controller
     }
 
     // Enregistrer une nouvelle transaction
-    public function store(Request $request)
+    public function store(StoreTransactionRequest $request)
     {
-        $request->validate([
-            'produit_id' => 'required|exists:produits,id',
-            'quantite' => 'required|integer|min:1',
-        ]);
+        $data = $request->validated();
 
-        $produit = Produit::findOrFail($request->produit_id);
-        $total = $produit->prix * $request->quantite;
+        try {
+            DB::transaction(function () use ($data) {
+                // Verrouille la ligne pour éviter qu'une requête concurrente
+                // ne vende le même stock en même temps.
+                $produit = Produit::where('id', $data['produit_id'])
+                    ->lockForUpdate()
+                    ->firstOrFail();
 
-        if ($produit->quantite < $request->quantite) {
-            return redirect()->back()->with('error', 'Stock insuffisant.');
+                if ($produit->quantite < $data['quantite']) {
+                    throw new \RuntimeException('Stock insuffisant.');
+                }
+
+                Transaction::create([
+                    'produit_id' => $produit->id,
+                    'user_id' => Auth::id(),
+                    'quantite' => $data['quantite'],
+                    'total' => $produit->prix * $data['quantite'],
+                    'statut' => 'effectuée',
+                ]);
+
+                $produit->decrement('quantite', $data['quantite']);
+            });
+        } catch (\RuntimeException $e) {
+            return redirect()->back()->with('error', $e->getMessage());
         }
-
-        // Enregistrer la transaction
-        Transaction::create([
-            'produit_id' => $request->produit_id,
-            'user_id' => Auth::id(),
-            'quantite' => $request->quantite,
-            'total' => $total,
-            'statut' => 'effectuée',
-        ]);
-
-        // Mettre à jour le stock
-        $produit->decrement('quantite', $request->quantite);
 
         return redirect()->route('transactions.index')->with('success', 'Transaction enregistrée avec succès !');
     }
@@ -56,51 +62,57 @@ class TransactionController extends Controller
     // Afficher le formulaire d'édition d'une transaction
     public function edit(Transaction $transaction)
     {
-        // Vérifier que l'utilisateur est autorisé à modifier cette transaction
-        if ($transaction->user_id !== Auth::id()) {
-            abort(403, 'Accès interdit');
-        }
+        $this->authorize('update', $transaction);
 
         $produits = Produit::where('user_id', Auth::id())->get();
         return view('transactions.edit', compact('transaction', 'produits'));
     }
 
     // Mettre à jour une transaction existante
-    public function update(Request $request, Transaction $transaction)
+    public function update(UpdateTransactionRequest $request, Transaction $transaction)
     {
-        // Vérifier que l'utilisateur est autorisé à modifier cette transaction
-        if ($transaction->user_id !== Auth::id()) {
-            abort(403, 'Accès interdit');
-        }
+        $this->authorize('update', $transaction);
 
-        $request->validate([
-            'produit_id' => 'required|exists:produits,id',
-            'quantite' => 'required|integer|min:1',
-            'statut' => 'required|in:en attente,effectuée,annulée',
-        ]);
+        $data = $request->validated();
 
-        // Récupérer le produit associé
-        $produit = Produit::findOrFail($request->produit_id);
+        try {
+            DB::transaction(function () use ($data, $transaction) {
+                $ancienProduitId = $transaction->produit_id;
+                $ancienneQuantite = $transaction->quantite;
+                $ancienStatut = $transaction->statut;
 
-        // Calculer le nouveau total
-        $total = $produit->prix * $request->quantite;
+                // Verrouille l'ancien et le nouveau produit (peuvent être le même)
+                // pour éviter toute course avec une autre vente en cours.
+                $produitIds = collect([$ancienProduitId, $data['produit_id']])->unique();
+                $produits = Produit::whereIn('id', $produitIds)->lockForUpdate()->get()->keyBy('id');
 
-        // Vérifier le stock si la transaction est "effectuée"
-        if ($request->statut === 'effectuée' && $produit->quantite < $request->quantite) {
-            return redirect()->back()->with('error', 'Stock insuffisant.');
-        }
+                // Si la transaction avait déjà décrémenté du stock, on le restitue
+                // avant d'appliquer les nouvelles valeurs, pour ne jamais décompter deux fois.
+                if ($ancienStatut === 'effectuée') {
+                    $produits[$ancienProduitId]->increment('quantite', $ancienneQuantite);
+                }
 
-        // Mettre à jour la transaction
-        $transaction->update([
-            'produit_id' => $request->produit_id,
-            'quantite' => $request->quantite,
-            'total' => $total,
-            'statut' => $request->statut,
-        ]);
+                $nouveauProduit = $produits[$data['produit_id']];
+                // Recharger au cas où le produit ci-dessus vient d'être crédité
+                $nouveauProduit->refresh();
 
-        // Mettre à jour le stock si nécessaire
-        if ($request->statut === 'effectuée') {
-            $produit->decrement('quantite', $request->quantite);
+                if ($data['statut'] === 'effectuée' && $nouveauProduit->quantite < $data['quantite']) {
+                    throw new \RuntimeException('Stock insuffisant.');
+                }
+
+                $transaction->update([
+                    'produit_id' => $data['produit_id'],
+                    'quantite' => $data['quantite'],
+                    'total' => $nouveauProduit->prix * $data['quantite'],
+                    'statut' => $data['statut'],
+                ]);
+
+                if ($data['statut'] === 'effectuée') {
+                    $nouveauProduit->decrement('quantite', $data['quantite']);
+                }
+            });
+        } catch (\RuntimeException $e) {
+            return redirect()->back()->with('error', $e->getMessage());
         }
 
         return redirect()->route('transactions.index')->with('success', 'Transaction mise à jour avec succès !');
@@ -109,11 +121,19 @@ class TransactionController extends Controller
     // Annuler une transaction
     public function destroy(Transaction $transaction)
     {
-        if ($transaction->user_id !== Auth::id()) {
-            abort(403, 'Accès interdit');
-        }
+        $this->authorize('delete', $transaction);
 
-        $transaction->update(['statut' => 'annulée']);
+        DB::transaction(function () use ($transaction) {
+            // Restituer le stock si la transaction avait effectivement décrémenté le produit
+            if ($transaction->statut === 'effectuée') {
+                Produit::where('id', $transaction->produit_id)
+                    ->lockForUpdate()
+                    ->increment('quantite', $transaction->quantite);
+            }
+
+            $transaction->update(['statut' => 'annulée']);
+        });
+
         return redirect()->route('transactions.index')->with('success', 'Transaction annulée.');
     }
 }
