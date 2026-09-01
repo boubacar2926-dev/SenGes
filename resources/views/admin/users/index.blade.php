@@ -46,7 +46,6 @@
                                     <!-- Suspendre / Réactiver -->
                                     <form action="{{ route('admin.users.suspend', $commercant) }}" method="POST">
                                         @csrf
-                                        @method('PATCH')
                                         <button type="submit"
                                             class="{{ $commercant->suspended ? 'bg-green-500 hover:bg-green-600' : 'bg-yellow-500 hover:bg-yellow-600' }} text-white px-4 py-2 rounded-md shadow-md transition duration-300">
                                             {{ $commercant->suspended ? '🔓 Réactiver' : '🔒 Suspendre' }}
@@ -87,7 +86,6 @@
                             <!-- Suspendre / Réactiver -->
                             <form action="{{ route('admin.users.suspend', $commercant) }}" method="POST">
                                 @csrf
-                                @method('PATCH')
                                 <button type="submit"
                                     class="{{ $commercant->suspended ? 'bg-green-500 hover:bg-green-600' : 'bg-yellow-500 hover:bg-yellow-600' }} text-white px-4 py-2 rounded-md shadow-md w-full">
                                     {{ $commercant->suspended ? '🔓 Réactiver' : '🔒 Suspendre' }}
