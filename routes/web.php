@@ -73,7 +73,7 @@ Route::middleware(['auth', 'role:commercant'])->group(function () {
 
     // Routes pour les transactions
     Route::resource('transactions', TransactionController::class)->except(['show']);
-    Route::get('transactions/{transaction}/facture', [TransactionController::class, 'facture'])->name('transactions.facture');
+    Route::get('transactions/facture/{groupeId}', [TransactionController::class, 'facture'])->name('transactions.facture');
 
     Route::get('/statistiques', [StatistiqueController::class, 'index'])->name('statistiques.index');
 

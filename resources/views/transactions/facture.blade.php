@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Facture #{{ str_pad($transaction->id, 6, '0', STR_PAD_LEFT) }} — {{ config('app.name') }}</title>
+    <title>Facture #{{ str_pad($transactions->min('id'), 6, '0', STR_PAD_LEFT) }} — {{ config('app.name') }}</title>
     @vite(['resources/css/app.css'])
     <style>
         @media print {
@@ -25,13 +25,13 @@
         <div class="bg-white shadow-lg rounded-lg p-8">
             <div class="flex justify-between items-start border-b pb-6 mb-6">
                 <div>
-                    <h1 class="text-2xl font-bold text-gray-800">{{ $transaction->user->name }}</h1>
-                    <p class="text-sm text-gray-500">{{ $transaction->user->email }}</p>
+                    <h1 class="text-2xl font-bold text-gray-800">{{ $transactions->first()->user->name }}</h1>
+                    <p class="text-sm text-gray-500">{{ $transactions->first()->user->email }}</p>
                 </div>
                 <div class="text-right">
                     <h2 class="text-xl font-semibold text-gray-800">FACTURE</h2>
-                    <p class="text-sm text-gray-500">N° {{ str_pad($transaction->id, 6, '0', STR_PAD_LEFT) }}</p>
-                    <p class="text-sm text-gray-500">{{ $transaction->created_at->format('d/m/Y') }}</p>
+                    <p class="text-sm text-gray-500">N° {{ str_pad($transactions->min('id'), 6, '0', STR_PAD_LEFT) }}</p>
+                    <p class="text-sm text-gray-500">{{ $transactions->first()->created_at->format('d/m/Y') }}</p>
                 </div>
             </div>
 
@@ -42,33 +42,32 @@
                         <th class="text-right px-4 py-2">Prix unitaire</th>
                         <th class="text-right px-4 py-2">Quantité</th>
                         <th class="text-right px-4 py-2">Total</th>
+                        <th class="text-right px-4 py-2">Statut</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr class="border-b">
-                        <td class="px-4 py-3">{{ $transaction->produit->nom }}</td>
-                        <td class="px-4 py-3 text-right">{{ number_format($transaction->produit->prix, 0, ',', ' ') }} FCFA</td>
-                        <td class="px-4 py-3 text-right">{{ $transaction->quantite }}</td>
-                        <td class="px-4 py-3 text-right font-semibold">{{ number_format($transaction->total, 0, ',', ' ') }} FCFA</td>
-                    </tr>
+                    @foreach ($transactions as $transaction)
+                        <tr class="border-b">
+                            <td class="px-4 py-3">{{ $transaction->produit->nom }}</td>
+                            <td class="px-4 py-3 text-right">{{ number_format($transaction->produit->prix, 0, ',', ' ') }} FCFA</td>
+                            <td class="px-4 py-3 text-right">{{ $transaction->quantite }}</td>
+                            <td class="px-4 py-3 text-right font-semibold">{{ number_format($transaction->total, 0, ',', ' ') }} FCFA</td>
+                            <td class="px-4 py-3 text-right text-sm">
+                                @if ($transaction->statut === 'effectuée') Effectuée
+                                @elseif ($transaction->statut === 'en attente') En attente
+                                @else Annulée
+                                @endif
+                            </td>
+                        </tr>
+                    @endforeach
                 </tbody>
                 <tfoot>
                     <tr>
                         <td colspan="3" class="px-4 py-3 text-right font-semibold">Total</td>
-                        <td class="px-4 py-3 text-right font-bold text-lg">{{ number_format($transaction->total, 0, ',', ' ') }} FCFA</td>
+                        <td colspan="2" class="px-4 py-3 text-right font-bold text-lg">{{ number_format($transactions->sum('total'), 0, ',', ' ') }} FCFA</td>
                     </tr>
                 </tfoot>
             </table>
-
-            <div class="text-sm text-gray-500">
-                Statut :
-                <span class="font-semibold">
-                    @if ($transaction->statut === 'effectuée') Effectuée
-                    @elseif ($transaction->statut === 'en attente') En attente
-                    @else Annulée
-                    @endif
-                </span>
-            </div>
         </div>
 
     </div>

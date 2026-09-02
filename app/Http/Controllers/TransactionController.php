@@ -9,6 +9,7 @@ use App\Models\Produit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class TransactionController extends Controller
 {
@@ -39,14 +40,19 @@ class TransactionController extends Controller
         ]);
     }
 
-    // Afficher la facture imprimable d'une transaction
-    public function facture(Transaction $transaction)
+    // Afficher la facture imprimable d'un lot de transactions (une ou plusieurs,
+    // créées ensemble dans la même soumission du formulaire)
+    public function facture(string $groupeId)
     {
-        $this->authorize('view', $transaction);
+        $transactions = Transaction::where('groupe_id', $groupeId)
+            ->with('produit')
+            ->orderBy('id')
+            ->get();
 
-        $transaction->load('produit');
+        abort_if($transactions->isEmpty(), 404);
+        abort_unless($transactions->first()->user_id === Auth::id(), 403);
 
-        return view('transactions.facture', compact('transaction'));
+        return view('transactions.facture', compact('transactions'));
     }
 
     // Afficher le formulaire de création d'une transaction
@@ -60,9 +66,10 @@ class TransactionController extends Controller
     public function store(StoreTransactionRequest $request)
     {
         $items = $request->validated()['items'];
+        $groupeId = (string) Str::uuid();
 
         try {
-            DB::transaction(function () use ($items) {
+            DB::transaction(function () use ($items, $groupeId) {
                 foreach ($items as $item) {
                     // Verrouille la ligne pour éviter qu'une requête concurrente
                     // ne vende le même stock en même temps. Si un même produit
@@ -82,6 +89,7 @@ class TransactionController extends Controller
                         'quantite' => $item['quantite'],
                         'total' => $produit->prix * $item['quantite'],
                         'statut' => 'effectuée',
+                        'groupe_id' => $groupeId,
                     ]);
 
                     $produit->decrement('quantite', $item['quantite']);

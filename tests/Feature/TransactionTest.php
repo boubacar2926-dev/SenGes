@@ -174,12 +174,36 @@ test('un commerçant peut consulter la facture de sa transaction', function () {
     $this->actingAs($commercant)->post('/transactions', ['items' => [['produit_id' => $produit->id, 'quantite' => 2]]]);
     $transaction = Transaction::first();
 
-    $response = $this->actingAs($commercant)->get("/transactions/{$transaction->id}/facture");
+    $response = $this->actingAs($commercant)->get('/transactions/facture/'.$transaction->groupe_id);
 
     $response->assertOk();
     $response->assertSee('FACTURE');
     $response->assertSee('Sac de riz');
     $response->assertSee('200'); // total
+});
+
+test('une facture regroupe toutes les transactions créées dans la même soumission', function () {
+    $commercant = User::factory()->commercant()->create();
+    $riz = Produit::factory()->for($commercant)->create(['nom' => 'Sac de riz', 'prix' => 100, 'quantite' => 50]);
+    $huile = Produit::factory()->for($commercant)->create(['nom' => 'Huile végétale', 'prix' => 50, 'quantite' => 50]);
+
+    $this->actingAs($commercant)->post('/transactions', [
+        'items' => [
+            ['produit_id' => $riz->id, 'quantite' => 2],
+            ['produit_id' => $huile->id, 'quantite' => 3],
+        ],
+    ]);
+
+    $transactions = Transaction::all();
+    expect($transactions)->toHaveCount(2);
+    expect($transactions->pluck('groupe_id')->unique())->toHaveCount(1);
+
+    $response = $this->actingAs($commercant)->get('/transactions/facture/'.$transactions->first()->groupe_id);
+
+    $response->assertOk();
+    $response->assertSee('Sac de riz');
+    $response->assertSee('Huile végétale');
+    $response->assertSee('350'); // 200 + 150 : total du lot
 });
 
 test('un commerçant ne peut pas consulter la facture de la transaction d’un autre', function () {
@@ -189,9 +213,17 @@ test('un commerçant ne peut pas consulter la facture de la transaction d’un a
     $this->actingAs($proprietaire)->post('/transactions', ['items' => [['produit_id' => $produit->id, 'quantite' => 1]]]);
     $transaction = Transaction::first();
 
-    $response = $this->actingAs($autre)->get("/transactions/{$transaction->id}/facture");
+    $response = $this->actingAs($autre)->get('/transactions/facture/'.$transaction->groupe_id);
 
     $response->assertForbidden();
+});
+
+test('une facture pour un groupe inexistant renvoie une 404', function () {
+    $commercant = User::factory()->commercant()->create();
+
+    $response = $this->actingAs($commercant)->get('/transactions/facture/00000000-0000-0000-0000-000000000000');
+
+    $response->assertNotFound();
 });
 
 test('un commerçant ne peut pas modifier la transaction d’un autre', function () {

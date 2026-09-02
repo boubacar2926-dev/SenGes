@@ -121,7 +121,7 @@
                                     </td>
                                     <td class="px-6 py-4 flex justify-center space-x-2">
                                         @if ($transaction->statut === 'effectuée')
-                                            <a href="{{ route('transactions.facture', $transaction) }}" class="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded-md shadow-md transition duration-300">
+                                            <a href="{{ route('transactions.facture', $transaction->groupe_id) }}" class="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded-md shadow-md transition duration-300">
                                                 🧾 Facture
                                             </a>
                                             <a href="{{ route('transactions.edit', $transaction) }}" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md shadow-md transition duration-300">
@@ -180,7 +180,7 @@
                             </p>
                             <div class="flex flex-col mt-4 space-y-2">
                                 @if ($transaction->statut === 'effectuée')
-                                    <a href="{{ route('transactions.facture', $transaction) }}" class="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded-md shadow-md text-center">
+                                    <a href="{{ route('transactions.facture', $transaction->groupe_id) }}" class="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded-md shadow-md text-center">
                                         🧾 Facture
                                     </a>
                                     <a href="{{ route('transactions.edit', $transaction) }}" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md shadow-md text-center">
