@@ -9,8 +9,7 @@ test('créer une transaction décrémente le stock du produit', function () {
     $produit = Produit::factory()->for($commercant)->create(['quantite' => 20, 'prix' => 100]);
 
     $response = $this->actingAs($commercant)->post('/transactions', [
-        'produit_id' => $produit->id,
-        'quantite' => 5,
+        'items' => [['produit_id' => $produit->id, 'quantite' => 5]],
     ]);
 
     $response->assertRedirect('/transactions');
@@ -23,13 +22,61 @@ test('créer une transaction décrémente le stock du produit', function () {
     ]);
 });
 
+test('le formulaire de création affiche les produits disponibles', function () {
+    $commercant = User::factory()->commercant()->create();
+    Produit::factory()->for($commercant)->create(['nom' => 'Sac de riz']);
+
+    $response = $this->actingAs($commercant)->get('/transactions/create');
+
+    $response->assertOk();
+    $response->assertSee('Sac de riz');
+    $response->assertSee('Ajouter un produit');
+});
+
+test('on peut créer plusieurs transactions en une seule requête', function () {
+    $commercant = User::factory()->commercant()->create();
+    $riz = Produit::factory()->for($commercant)->create(['quantite' => 20, 'prix' => 100]);
+    $huile = Produit::factory()->for($commercant)->create(['quantite' => 10, 'prix' => 50]);
+
+    $response = $this->actingAs($commercant)->post('/transactions', [
+        'items' => [
+            ['produit_id' => $riz->id, 'quantite' => 5],
+            ['produit_id' => $huile->id, 'quantite' => 3],
+        ],
+    ]);
+
+    $response->assertRedirect('/transactions');
+    expect($riz->fresh()->quantite)->toBe(15);
+    expect($huile->fresh()->quantite)->toBe(7);
+    $this->assertDatabaseCount('transactions', 2);
+    $this->assertDatabaseHas('transactions', ['produit_id' => $riz->id, 'quantite' => 5, 'total' => 500]);
+    $this->assertDatabaseHas('transactions', ['produit_id' => $huile->id, 'quantite' => 3, 'total' => 150]);
+});
+
+test('si une ligne échoue par manque de stock, aucune transaction du lot n’est créée', function () {
+    $commercant = User::factory()->commercant()->create();
+    $riz = Produit::factory()->for($commercant)->create(['quantite' => 20, 'prix' => 100]);
+    $huile = Produit::factory()->for($commercant)->create(['quantite' => 2, 'prix' => 50]);
+
+    $response = $this->actingAs($commercant)->post('/transactions', [
+        'items' => [
+            ['produit_id' => $riz->id, 'quantite' => 5],
+            ['produit_id' => $huile->id, 'quantite' => 10],
+        ],
+    ]);
+
+    $response->assertSessionHas('error');
+    expect($riz->fresh()->quantite)->toBe(20);
+    expect($huile->fresh()->quantite)->toBe(2);
+    $this->assertDatabaseCount('transactions', 0);
+});
+
 test('créer une transaction échoue si le stock est insuffisant', function () {
     $commercant = User::factory()->commercant()->create();
     $produit = Produit::factory()->for($commercant)->create(['quantite' => 3]);
 
     $response = $this->actingAs($commercant)->post('/transactions', [
-        'produit_id' => $produit->id,
-        'quantite' => 5,
+        'items' => [['produit_id' => $produit->id, 'quantite' => 5]],
     ]);
 
     $response->assertSessionHas('error');
@@ -42,8 +89,7 @@ test('modifier la quantité d’une transaction effectuée ajuste le stock sans 
     $produit = Produit::factory()->for($commercant)->create(['quantite' => 20, 'prix' => 100]);
 
     $this->actingAs($commercant)->post('/transactions', [
-        'produit_id' => $produit->id,
-        'quantite' => 5,
+        'items' => [['produit_id' => $produit->id, 'quantite' => 5]],
     ]);
     $transaction = Transaction::first();
     expect($produit->fresh()->quantite)->toBe(15);
@@ -66,8 +112,7 @@ test('annuler une transaction via update restitue le stock', function () {
     $produit = Produit::factory()->for($commercant)->create(['quantite' => 20]);
 
     $this->actingAs($commercant)->post('/transactions', [
-        'produit_id' => $produit->id,
-        'quantite' => 5,
+        'items' => [['produit_id' => $produit->id, 'quantite' => 5]],
     ]);
     $transaction = Transaction::first();
     expect($produit->fresh()->quantite)->toBe(15);
@@ -87,8 +132,7 @@ test('supprimer (annuler) une transaction effectuée restitue le stock', functio
     $produit = Produit::factory()->for($commercant)->create(['quantite' => 20]);
 
     $this->actingAs($commercant)->post('/transactions', [
-        'produit_id' => $produit->id,
-        'quantite' => 5,
+        'items' => [['produit_id' => $produit->id, 'quantite' => 5]],
     ]);
     $transaction = Transaction::first();
     expect($produit->fresh()->quantite)->toBe(15);
@@ -105,8 +149,8 @@ test('la recherche filtre les transactions par nom de produit', function () {
     $riz = Produit::factory()->for($commercant)->create(['nom' => 'Sac de riz', 'quantite' => 50]);
     $huile = Produit::factory()->for($commercant)->create(['nom' => 'Huile végétale', 'quantite' => 50]);
 
-    $this->actingAs($commercant)->post('/transactions', ['produit_id' => $riz->id, 'quantite' => 1]);
-    $this->actingAs($commercant)->post('/transactions', ['produit_id' => $huile->id, 'quantite' => 1]);
+    $this->actingAs($commercant)->post('/transactions', ['items' => [['produit_id' => $riz->id, 'quantite' => 1]]]);
+    $this->actingAs($commercant)->post('/transactions', ['items' => [['produit_id' => $huile->id, 'quantite' => 1]]]);
 
     $response = $this->actingAs($commercant)->get('/transactions?search=riz');
 
@@ -117,7 +161,7 @@ test('la recherche filtre les transactions par nom de produit', function () {
 test('un commerçant peut consulter la facture de sa transaction', function () {
     $commercant = User::factory()->commercant()->create();
     $produit = Produit::factory()->for($commercant)->create(['nom' => 'Sac de riz', 'prix' => 100, 'quantite' => 50]);
-    $this->actingAs($commercant)->post('/transactions', ['produit_id' => $produit->id, 'quantite' => 2]);
+    $this->actingAs($commercant)->post('/transactions', ['items' => [['produit_id' => $produit->id, 'quantite' => 2]]]);
     $transaction = Transaction::first();
 
     $response = $this->actingAs($commercant)->get("/transactions/{$transaction->id}/facture");
@@ -132,7 +176,7 @@ test('un commerçant ne peut pas consulter la facture de la transaction d’un a
     $proprietaire = User::factory()->commercant()->create();
     $autre = User::factory()->commercant()->create();
     $produit = Produit::factory()->for($proprietaire)->create(['quantite' => 50]);
-    $this->actingAs($proprietaire)->post('/transactions', ['produit_id' => $produit->id, 'quantite' => 1]);
+    $this->actingAs($proprietaire)->post('/transactions', ['items' => [['produit_id' => $produit->id, 'quantite' => 1]]]);
     $transaction = Transaction::first();
 
     $response = $this->actingAs($autre)->get("/transactions/{$transaction->id}/facture");

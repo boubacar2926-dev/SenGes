@@ -57,38 +57,46 @@ class TransactionController extends Controller
         return view('transactions.create', compact('produits'));
     }
 
-    // Enregistrer une nouvelle transaction
+    // Enregistrer une ou plusieurs transactions (une par produit sélectionné)
     public function store(StoreTransactionRequest $request)
     {
-        $data = $request->validated();
+        $items = $request->validated()['items'];
 
         try {
-            DB::transaction(function () use ($data) {
-                // Verrouille la ligne pour éviter qu'une requête concurrente
-                // ne vende le même stock en même temps.
-                $produit = Produit::where('id', $data['produit_id'])
-                    ->lockForUpdate()
-                    ->firstOrFail();
+            DB::transaction(function () use ($items) {
+                foreach ($items as $item) {
+                    // Verrouille la ligne pour éviter qu'une requête concurrente
+                    // ne vende le même stock en même temps. Si un même produit
+                    // apparaît sur plusieurs lignes, chaque itération relit son
+                    // stock déjà décrémenté par les lignes précédentes.
+                    $produit = Produit::where('id', $item['produit_id'])
+                        ->lockForUpdate()
+                        ->firstOrFail();
 
-                if ($produit->quantite < $data['quantite']) {
-                    throw new \RuntimeException('Stock insuffisant.');
+                    if ($produit->quantite < $item['quantite']) {
+                        throw new \RuntimeException("Stock insuffisant pour « {$produit->nom} ».");
+                    }
+
+                    Transaction::create([
+                        'produit_id' => $produit->id,
+                        'user_id' => Auth::id(),
+                        'quantite' => $item['quantite'],
+                        'total' => $produit->prix * $item['quantite'],
+                        'statut' => 'effectuée',
+                    ]);
+
+                    $produit->decrement('quantite', $item['quantite']);
                 }
-
-                Transaction::create([
-                    'produit_id' => $produit->id,
-                    'user_id' => Auth::id(),
-                    'quantite' => $data['quantite'],
-                    'total' => $produit->prix * $data['quantite'],
-                    'statut' => 'effectuée',
-                ]);
-
-                $produit->decrement('quantite', $data['quantite']);
             });
         } catch (\RuntimeException $e) {
             return redirect()->back()->with('error', $e->getMessage());
         }
 
-        return redirect()->route('transactions.index')->with('success', 'Transaction enregistrée avec succès !');
+        $message = count($items) > 1
+            ? count($items).' transactions enregistrées avec succès !'
+            : 'Transaction enregistrée avec succès !';
+
+        return redirect()->route('transactions.index')->with('success', $message);
     }
 
     // Afficher le formulaire d'édition d'une transaction
