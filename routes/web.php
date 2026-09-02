@@ -68,6 +68,7 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 */
 Route::middleware(['auth', 'role:commercant'])->group(function () {
     Route::get('/commercant/dashboard', [CommercantController::class, 'index'])->name('commercant.dashboard');
+    Route::get('produits/suggestions', [ProduitController::class, 'suggestions'])->name('produits.suggestions');
     Route::resource('produits', ProduitController::class)->except(['show']);
 
     // Routes pour les transactions

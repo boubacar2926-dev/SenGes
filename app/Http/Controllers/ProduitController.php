@@ -38,6 +38,25 @@ class ProduitController extends Controller
         return view('produits.create');
     }
 
+    // Suggestions de noms de produits pour l'autocomplétion des recherches
+    public function suggestions(Request $request)
+    {
+        $search = trim((string) $request->input('q', ''));
+
+        if ($search === '') {
+            return response()->json([]);
+        }
+
+        $noms = Produit::where('user_id', Auth::id())
+            ->where('nom', 'like', '%'.$search.'%')
+            ->orderBy('nom')
+            ->distinct()
+            ->limit(8)
+            ->pluck('nom');
+
+        return response()->json($noms);
+    }
+
     public function store(ProduitRequest $request)
     {
         Produit::create([

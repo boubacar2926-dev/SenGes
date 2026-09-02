@@ -86,6 +86,28 @@ test('le tri par prix fonctionne dans les deux sens', function () {
     $desc->assertSeeInOrder(['Cher', 'Pas cher']);
 });
 
+test('les suggestions renvoient les noms de produits correspondants', function () {
+    $commercant = User::factory()->commercant()->create();
+    Produit::factory()->for($commercant)->create(['nom' => 'Sac de riz']);
+    Produit::factory()->for($commercant)->create(['nom' => 'Huile végétale']);
+
+    $response = $this->actingAs($commercant)->getJson('/produits/suggestions?q=riz');
+
+    $response->assertOk();
+    $response->assertJson(['Sac de riz']);
+});
+
+test('les suggestions ne remontent pas les produits d’un autre commerçant', function () {
+    $commercant = User::factory()->commercant()->create();
+    $autre = User::factory()->commercant()->create();
+    Produit::factory()->for($autre)->create(['nom' => 'Sac de riz']);
+
+    $response = $this->actingAs($commercant)->getJson('/produits/suggestions?q=riz');
+
+    $response->assertOk();
+    $response->assertJson([]);
+});
+
 test('un tri sur une colonne non autorisée est ignoré', function () {
     $commercant = User::factory()->commercant()->create();
     Produit::factory()->for($commercant)->create();

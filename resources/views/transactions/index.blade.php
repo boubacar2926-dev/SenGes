@@ -16,25 +16,45 @@
             </div>
 
             <!-- Barre de recherche -->
-            <form method="GET" action="{{ route('transactions.index') }}" class="mb-6 flex gap-2">
-                <input type="hidden" name="sort" value="{{ $sort }}">
-                <input type="hidden" name="direction" value="{{ $direction }}">
-                <input
-                    type="text"
-                    name="search"
-                    value="{{ $search }}"
-                    placeholder="Rechercher par nom de produit..."
-                    class="flex-1 rounded-md border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                >
-                <button type="submit" class="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded-md shadow-md transition duration-300">
-                    🔍 Rechercher
-                </button>
-                @if($search)
-                    <a href="{{ route('transactions.index', array_filter(['sort' => $sort, 'direction' => $direction])) }}" class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-md shadow-md transition duration-300">
-                        Effacer
-                    </a>
-                @endif
-            </form>
+            <div
+                x-data="searchSuggestions('{{ route('produits.suggestions') }}', @js($search ?? ''))"
+                @click.outside="open = false"
+                class="relative mb-6"
+            >
+                <form method="GET" action="{{ route('transactions.index') }}" x-ref="form" class="flex gap-2">
+                    <input type="hidden" name="sort" value="{{ $sort }}">
+                    <input type="hidden" name="direction" value="{{ $direction }}">
+                    <div class="flex-1 relative">
+                        <input
+                            type="text"
+                            name="search"
+                            x-model="query"
+                            @input="search()"
+                            @keydown.escape="open = false"
+                            autocomplete="off"
+                            placeholder="Rechercher par nom de produit..."
+                            class="w-full rounded-md border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        >
+                        <ul
+                            x-show="open"
+                            class="absolute z-10 mt-1 w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg max-h-56 overflow-auto"
+                            style="display: none;"
+                        >
+                            <template x-for="suggestion in suggestions" :key="suggestion">
+                                <li @click="select(suggestion)" class="px-4 py-2 hover:bg-blue-50 dark:hover:bg-gray-600 cursor-pointer" x-text="suggestion"></li>
+                            </template>
+                        </ul>
+                    </div>
+                    <button type="submit" class="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded-md shadow-md transition duration-300">
+                        🔍 Rechercher
+                    </button>
+                    @if($search)
+                        <a href="{{ route('transactions.index', array_filter(['sort' => $sort, 'direction' => $direction])) }}" class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-md shadow-md transition duration-300">
+                            Effacer
+                        </a>
+                    @endif
+                </form>
+            </div>
 
          <!--Message de succès-->
             @if(session('success'))
