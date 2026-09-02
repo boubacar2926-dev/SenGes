@@ -168,6 +168,45 @@ test('la recherche filtre les transactions par nom de produit', function () {
     $response->assertDontSee('Huile végétale');
 });
 
+test('les transactions créées ensemble apparaissent dans un seul bloc avec une seule facture', function () {
+    $commercant = User::factory()->commercant()->create();
+    $riz = Produit::factory()->for($commercant)->create(['nom' => 'Sac de riz', 'quantite' => 50]);
+    $huile = Produit::factory()->for($commercant)->create(['nom' => 'Huile végétale', 'quantite' => 50]);
+
+    $this->actingAs($commercant)->post('/transactions', [
+        'items' => [
+            ['produit_id' => $riz->id, 'quantite' => 1],
+            ['produit_id' => $huile->id, 'quantite' => 1],
+        ],
+    ]);
+
+    $response = $this->actingAs($commercant)->get('/transactions');
+
+    $response->assertOk();
+    $groupeId = Transaction::first()->groupe_id;
+    $lienFacture = route('transactions.facture', $groupeId);
+    expect(substr_count($response->getContent(), $lienFacture))->toBe(1);
+});
+
+test('deux ventes distinctes apparaissent dans des blocs séparés', function () {
+    $commercant = User::factory()->commercant()->create();
+    $riz = Produit::factory()->for($commercant)->create(['nom' => 'Sac de riz', 'quantite' => 50]);
+    $huile = Produit::factory()->for($commercant)->create(['nom' => 'Huile végétale', 'quantite' => 50]);
+
+    $this->actingAs($commercant)->post('/transactions', ['items' => [['produit_id' => $riz->id, 'quantite' => 1]]]);
+    $this->actingAs($commercant)->post('/transactions', ['items' => [['produit_id' => $huile->id, 'quantite' => 1]]]);
+
+    $response = $this->actingAs($commercant)->get('/transactions');
+
+    $response->assertOk();
+    $groupeIds = Transaction::pluck('groupe_id')->unique();
+    expect($groupeIds)->toHaveCount(2);
+
+    foreach ($groupeIds as $groupeId) {
+        expect(substr_count($response->getContent(), route('transactions.facture', $groupeId)))->toBe(1);
+    }
+});
+
 test('un commerçant peut consulter la facture de sa transaction', function () {
     $commercant = User::factory()->commercant()->create();
     $produit = Produit::factory()->for($commercant)->create(['nom' => 'Sac de riz', 'prix' => 100, 'quantite' => 50]);

@@ -66,6 +66,14 @@
                 </div>
             @endif
 
+            <!-- Alerte stock faible -->
+            @if($produitsStockFaible->isNotEmpty())
+                <div class="bg-yellow-100 dark:bg-yellow-900 border border-yellow-400 dark:border-yellow-700 text-yellow-800 dark:text-yellow-200 p-4 rounded-lg shadow-md mb-4">
+                    ⚠️ Stock faible (moins de {{ \App\Http\Controllers\ProduitController::SEUIL_STOCK_FAIBLE }}) pour :
+                    <strong>{{ $produitsStockFaible->implode(', ') }}</strong>
+                </div>
+            @endif
+
             @php
                 $sortLink = function (string $column) use ($sort, $direction, $search) {
                     $newDirection = ($sort === $column && $direction === 'asc') ? 'desc' : 'asc';
@@ -102,7 +110,12 @@
                                 <td class="px-6 py-4 font-medium text-gray-800 dark:text-gray-300">{{ $produit->nom }}</td>
                                 <td class="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{{ $produit->description }}</td>
                                 <td class="px-6 py-4 font-semibold text-blue-500">{{ number_format($produit->prix, 0, ',', ' ') }} FCFA</td>
-                                <td class="px-6 py-4 text-center">{{ $produit->quantite }}</td>
+                                <td class="px-6 py-4 text-center">
+                                    {{ $produit->quantite }}
+                                    @if($produit->quantite < \App\Http\Controllers\ProduitController::SEUIL_STOCK_FAIBLE)
+                                        <span class="ml-1 bg-yellow-200 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-200 text-xs font-semibold px-2 py-1 rounded-full">⚠️ Faible</span>
+                                    @endif
+                                </td>
                                 <td class="px-6 py-4 flex justify-center space-x-2">
                                     <a href="{{ route('produits.edit', $produit) }}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md shadow-md transition duration-300">
                                         ✏️ Modifier
@@ -142,6 +155,9 @@
                         </p>
                         <p class="text-sm">
                             Quantité: <span class="font-semibold">{{ $produit->quantite }}</span>
+                            @if($produit->quantite < \App\Http\Controllers\ProduitController::SEUIL_STOCK_FAIBLE)
+                                <span class="ml-1 bg-yellow-200 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-200 text-xs font-semibold px-2 py-1 rounded-full">⚠️ Faible</span>
+                            @endif
                         </p>
                         <div class="flex flex-col mt-4 space-y-2">
                             <a href="{{ route('produits.edit', $produit) }}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md shadow-md text-center">

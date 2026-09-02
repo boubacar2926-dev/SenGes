@@ -127,6 +127,37 @@ test('les suggestions ne remontent pas les produits d’un autre commerçant', f
     $response->assertJson([]);
 });
 
+test('une alerte s’affiche pour les produits en stock faible', function () {
+    $commercant = User::factory()->commercant()->create();
+    Produit::factory()->for($commercant)->create(['nom' => 'Riz presque épuisé', 'quantite' => 3]);
+    Produit::factory()->for($commercant)->create(['nom' => 'Huile bien stockée', 'quantite' => 40]);
+
+    $response = $this->actingAs($commercant)->get('/produits');
+
+    $response->assertSee('Stock faible');
+    $response->assertSee('Riz presque épuisé');
+    $response->assertSee('⚠️ Faible');
+});
+
+test('aucune alerte de stock faible si tout va bien', function () {
+    $commercant = User::factory()->commercant()->create();
+    Produit::factory()->for($commercant)->create(['quantite' => 40]);
+
+    $response = $this->actingAs($commercant)->get('/produits');
+
+    $response->assertDontSee('Stock faible');
+});
+
+test('l’alerte de stock faible ne montre pas les produits d’un autre commerçant', function () {
+    $commercant = User::factory()->commercant()->create();
+    $autre = User::factory()->commercant()->create();
+    Produit::factory()->for($autre)->create(['nom' => 'Produit d’un autre', 'quantite' => 1]);
+
+    $response = $this->actingAs($commercant)->get('/produits');
+
+    $response->assertDontSee('Stock faible');
+});
+
 test('un tri sur une colonne non autorisée est ignoré', function () {
     $commercant = User::factory()->commercant()->create();
     Produit::factory()->for($commercant)->create();

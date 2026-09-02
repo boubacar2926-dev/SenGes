@@ -13,30 +13,30 @@ use Illuminate\Support\Str;
 
 class TransactionController extends Controller
 {
-    // Afficher la liste des transactions
+    // Afficher la liste des transactions, groupées par vente (lignes créées
+    // ensemble dans la même soumission du formulaire)
     public function index(Request $request)
     {
         $search = $request->input('search');
-        $sort = $request->input('sort', 'created_at');
-        $direction = $request->input('direction') === 'asc' ? 'asc' : 'desc';
-
-        if (! in_array($sort, ['quantite', 'total', 'statut', 'created_at'], true)) {
-            $sort = 'created_at';
-        }
 
         $matchingProduitIds = Produit::searchIdsForUser(Auth::id(), $search);
 
         $transactions = Transaction::where('user_id', Auth::id())
             ->when($matchingProduitIds !== null, fn ($query) => $query->whereIn('produit_id', $matchingProduitIds))
-            ->orderBy($sort, $direction)
+            ->orderBy('created_at', 'desc')
+            ->orderBy('id', 'desc')
             ->paginate(10)
             ->withQueryString();
 
+        // Le tri par created_at place les lignes d'une même vente les unes à
+        // la suite des autres : groupBy() les rassemble donc naturellement
+        // dans l'ordre d'affichage, une vente = un bloc.
+        $groupedTransactions = $transactions->getCollection()->groupBy('groupe_id');
+
         return view('transactions.index', [
             'transactions' => $transactions,
+            'groupedTransactions' => $groupedTransactions,
             'search' => $search,
-            'sort' => $sort,
-            'direction' => $direction,
         ]);
     }
 

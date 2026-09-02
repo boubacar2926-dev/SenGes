@@ -10,6 +10,8 @@ use Illuminate\Support\Str;
 
 class ProduitController extends Controller
 {
+    public const SEUIL_STOCK_FAIBLE = 8;
+
     public function index(Request $request)
     {
         $search = $request->input('search');
@@ -28,11 +30,17 @@ class ProduitController extends Controller
             ->paginate(10)
             ->withQueryString();
 
+        $produitsStockFaible = Produit::where('user_id', Auth::id())
+            ->where('quantite', '<', self::SEUIL_STOCK_FAIBLE)
+            ->orderBy('quantite')
+            ->pluck('nom');
+
         return view('produits.index', [
             'produits' => $produits,
             'search' => $search,
             'sort' => $sort,
             'direction' => $direction,
+            'produitsStockFaible' => $produitsStockFaible,
         ]);
     }
 
