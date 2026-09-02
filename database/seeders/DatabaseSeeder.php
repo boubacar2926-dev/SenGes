@@ -57,7 +57,17 @@ class DatabaseSeeder extends Seeder
         $produitsCount = (int) env('SEED_DEMO_PRODUCTS_COUNT', 20);
 
         if ($produitsCount > 0 && Produit::where('user_id', $commercant->id)->count() === 0) {
-            Produit::factory()->for($commercant)->count($produitsCount)->create();
+            $noms = ['Riz', 'Huile', 'Sucre', 'Farine', 'Lait', 'Café', 'Thé', 'Savon', 'Sel', 'Pâtes'];
+
+            for ($i = 1; $i <= $produitsCount; $i++) {
+                Produit::create([
+                    'user_id' => $commercant->id,
+                    'nom' => $noms[($i - 1) % count($noms)].' '.$i,
+                    'description' => 'Produit de démonstration.',
+                    'prix' => random_int(500, 50000),
+                    'quantite' => random_int(1, 100),
+                ]);
+            }
         }
     }
 }
