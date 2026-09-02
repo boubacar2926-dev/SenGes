@@ -62,3 +62,35 @@ test('un admin ne peut pas accéder aux routes commerçant', function () {
 
     $response->assertForbidden();
 });
+
+test('la recherche filtre les produits par nom', function () {
+    $commercant = User::factory()->commercant()->create();
+    Produit::factory()->for($commercant)->create(['nom' => 'Sac de riz']);
+    Produit::factory()->for($commercant)->create(['nom' => 'Huile végétale']);
+
+    $response = $this->actingAs($commercant)->get('/produits?search=riz');
+
+    $response->assertSee('Sac de riz');
+    $response->assertDontSee('Huile végétale');
+});
+
+test('le tri par prix fonctionne dans les deux sens', function () {
+    $commercant = User::factory()->commercant()->create();
+    Produit::factory()->for($commercant)->create(['nom' => 'Cher', 'prix' => 100]);
+    Produit::factory()->for($commercant)->create(['nom' => 'Pas cher', 'prix' => 10]);
+
+    $asc = $this->actingAs($commercant)->get('/produits?sort=prix&direction=asc');
+    $asc->assertSeeInOrder(['Pas cher', 'Cher']);
+
+    $desc = $this->actingAs($commercant)->get('/produits?sort=prix&direction=desc');
+    $desc->assertSeeInOrder(['Cher', 'Pas cher']);
+});
+
+test('un tri sur une colonne non autorisée est ignoré', function () {
+    $commercant = User::factory()->commercant()->create();
+    Produit::factory()->for($commercant)->create();
+
+    $response = $this->actingAs($commercant)->get('/produits?sort=user_id&direction=asc');
+
+    $response->assertOk();
+});

@@ -18,6 +18,27 @@
                 </a>
             </div>
 
+            <!-- Barre de recherche -->
+            <form method="GET" action="{{ route('produits.index') }}" class="mb-6 flex gap-2">
+                <input type="hidden" name="sort" value="{{ $sort }}">
+                <input type="hidden" name="direction" value="{{ $direction }}">
+                <input
+                    type="text"
+                    name="search"
+                    value="{{ $search }}"
+                    placeholder="Rechercher un produit par nom..."
+                    class="flex-1 rounded-md border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                >
+                <button type="submit" class="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded-md shadow-md transition duration-300">
+                    🔍 Rechercher
+                </button>
+                @if($search)
+                    <a href="{{ route('produits.index', array_filter(['sort' => $sort, 'direction' => $direction])) }}" class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-md shadow-md transition duration-300">
+                        Effacer
+                    </a>
+                @endif
+            </form>
+
             <!-- Message de succès -->
             @if(session('success'))
                 <div class="bg-green-500 text-white p-3 rounded-lg shadow-md mb-4">
@@ -25,20 +46,38 @@
                 </div>
             @endif
 
+            @php
+                $sortLink = function (string $column) use ($sort, $direction, $search) {
+                    $newDirection = ($sort === $column && $direction === 'asc') ? 'desc' : 'asc';
+                    return route('produits.index', array_filter([
+                        'search' => $search,
+                        'sort' => $column,
+                        'direction' => $newDirection,
+                    ]));
+                };
+                $sortIndicator = fn (string $column) => $sort === $column ? ($direction === 'asc' ? '▲' : '▼') : '';
+            @endphp
+
             <!-- Version Desktop : Tableau -->
             <div class="hidden sm:block bg-white dark:bg-gray-800 shadow-lg rounded-lg overflow-hidden">
                 <table class="w-full border-collapse">
                     <thead class="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 uppercase text-sm font-semibold">
                         <tr>
-                            <th class="px-6 py-3 text-left">Nom</th>
+                            <th class="px-6 py-3 text-left">
+                                <a href="{{ $sortLink('nom') }}" class="hover:underline">Nom {{ $sortIndicator('nom') }}</a>
+                            </th>
                             <th class="px-6 py-3 text-left">Description</th>
-                            <th class="px-6 py-3 text-left">Prix</th>
-                            <th class="px-6 py-3 text-center">Quantité</th>
+                            <th class="px-6 py-3 text-left">
+                                <a href="{{ $sortLink('prix') }}" class="hover:underline">Prix {{ $sortIndicator('prix') }}</a>
+                            </th>
+                            <th class="px-6 py-3 text-center">
+                                <a href="{{ $sortLink('quantite') }}" class="hover:underline">Quantité {{ $sortIndicator('quantite') }}</a>
+                            </th>
                             <th class="px-6 py-3 text-center">Actions</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-200 dark:divide-gray-600">
-                        @foreach ($produits as $produit)
+                        @forelse ($produits as $produit)
                             <tr class="hover:bg-gray-100 dark:hover:bg-gray-700 transition duration-200">
                                 <td class="px-6 py-4 font-medium text-gray-800 dark:text-gray-300">{{ $produit->nom }}</td>
                                 <td class="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{{ $produit->description }}</td>
@@ -57,14 +96,20 @@
                                     </form>
                                 </td>
                             </tr>
-                        @endforeach
+                        @empty
+                            <tr>
+                                <td colspan="5" class="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
+                                    Aucun produit trouvé.
+                                </td>
+                            </tr>
+                        @endforelse
                     </tbody>
                 </table>
             </div>
 
             <!-- Version Mobile : Affichage sous forme de cartes -->
             <div class="sm:hidden space-y-4">
-                @foreach ($produits as $produit)
+                @forelse ($produits as $produit)
                     <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md">
                         <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">
                             {{ $produit->nom }}
@@ -91,7 +136,16 @@
                             </form>
                         </div>
                     </div>
-                @endforeach
+                @empty
+                    <p class="text-center text-gray-500 dark:text-gray-400 py-8">
+                        Aucun produit trouvé.
+                    </p>
+                @endforelse
+            </div>
+
+            <!-- Pagination -->
+            <div class="mt-6">
+                {{ $produits->links() }}
             </div>
 
         </div>
