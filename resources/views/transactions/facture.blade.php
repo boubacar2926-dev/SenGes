@@ -25,8 +25,7 @@
         <div class="bg-white shadow-lg rounded-lg p-8">
             <div class="flex justify-between items-start border-b pb-6 mb-6">
                 <div>
-                    <h1 class="text-2xl font-bold text-gray-800">{{ config('app.name') }}</h1>
-                    <p class="text-sm text-gray-500">{{ $transaction->user->name }}</p>
+                    <h1 class="text-2xl font-bold text-gray-800">{{ $transaction->user->name }}</h1>
                     <p class="text-sm text-gray-500">{{ $transaction->user->email }}</p>
                 </div>
                 <div class="text-right">
