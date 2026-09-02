@@ -8,7 +8,7 @@
     <div class="py-12">
         <div
             class="max-w-4xl mx-auto sm:px-6 lg:px-8 bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6"
-            x-data="transactionForm(@json($produits->map(fn ($p) => ['id' => $p->id, 'nom' => $p->nom, 'prix' => (float) $p->prix])->values()))"
+            x-data="transactionForm({{ \Illuminate\Support\Js::from($produits->map(fn ($p) => ['id' => $p->id, 'nom' => $p->nom, 'prix' => (float) $p->prix])->values()) }})"
         >
             <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-4">📌 Détails de la Transaction</h3>
 

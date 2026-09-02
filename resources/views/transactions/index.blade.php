@@ -17,7 +17,7 @@
 
             <!-- Barre de recherche -->
             <div
-                x-data="searchSuggestions('{{ route('produits.suggestions') }}', @js($search ?? ''))"
+                x-data="searchSuggestions('{{ route('produits.suggestions') }}', {{ \Illuminate\Support\Js::from($search ?? '') }})"
                 @click.outside="open = false"
                 class="relative mb-6"
             >
