@@ -6,6 +6,7 @@ use App\Http\Requests\ProduitRequest;
 use App\Models\Produit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 
 class ProduitController extends Controller
 {
@@ -19,8 +20,10 @@ class ProduitController extends Controller
             $sort = 'created_at';
         }
 
+        $matchingIds = Produit::searchIdsForUser(Auth::id(), $search);
+
         $produits = Produit::where('user_id', Auth::id())
-            ->when($search, fn ($query) => $query->where('nom', 'like', '%'.$search.'%'))
+            ->when($matchingIds !== null, fn ($query) => $query->whereIn('id', $matchingIds))
             ->orderBy($sort, $direction)
             ->paginate(10)
             ->withQueryString();
@@ -47,12 +50,15 @@ class ProduitController extends Controller
             return response()->json([]);
         }
 
+        $needle = Str::of($search)->ascii()->lower()->value();
+
         $noms = Produit::where('user_id', Auth::id())
-            ->where('nom', 'like', '%'.$search.'%')
-            ->orderBy('nom')
-            ->distinct()
-            ->limit(8)
-            ->pluck('nom');
+            ->pluck('nom')
+            ->filter(fn ($nom) => str_contains(Str::of($nom)->ascii()->lower()->value(), $needle))
+            ->unique()
+            ->sort()
+            ->take(8)
+            ->values();
 
         return response()->json($noms);
     }

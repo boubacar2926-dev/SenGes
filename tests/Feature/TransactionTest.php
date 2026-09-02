@@ -144,6 +144,16 @@ test('supprimer (annuler) une transaction effectuée restitue le stock', functio
     expect($transaction->fresh()->statut)->toBe('annulée');
 });
 
+test('la recherche de transactions ignore la casse et les accents', function () {
+    $commercant = User::factory()->commercant()->create();
+    $cafe = Produit::factory()->for($commercant)->create(['nom' => 'Café en grains', 'quantite' => 10]);
+    $this->actingAs($commercant)->post('/transactions', ['items' => [['produit_id' => $cafe->id, 'quantite' => 1]]]);
+
+    $response = $this->actingAs($commercant)->get('/transactions?search=CAFE');
+
+    $response->assertSee('Café en grains');
+});
+
 test('la recherche filtre les transactions par nom de produit', function () {
     $commercant = User::factory()->commercant()->create();
     $riz = Produit::factory()->for($commercant)->create(['nom' => 'Sac de riz', 'quantite' => 50]);

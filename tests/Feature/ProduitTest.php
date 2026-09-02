@@ -86,6 +86,25 @@ test('le tri par prix fonctionne dans les deux sens', function () {
     $desc->assertSeeInOrder(['Cher', 'Pas cher']);
 });
 
+test('la recherche ignore la casse et les accents', function () {
+    $commercant = User::factory()->commercant()->create();
+    Produit::factory()->for($commercant)->create(['nom' => 'Café en grains']);
+
+    $response = $this->actingAs($commercant)->get('/produits?search=CAFE');
+
+    $response->assertSee('Café en grains');
+});
+
+test('les suggestions ignorent aussi la casse et les accents', function () {
+    $commercant = User::factory()->commercant()->create();
+    Produit::factory()->for($commercant)->create(['nom' => 'Café en grains']);
+
+    $response = $this->actingAs($commercant)->getJson('/produits/suggestions?q=cafe');
+
+    $response->assertOk();
+    $response->assertJson(['Café en grains']);
+});
+
 test('les suggestions renvoient les noms de produits correspondants', function () {
     $commercant = User::factory()->commercant()->create();
     Produit::factory()->for($commercant)->create(['nom' => 'Sac de riz']);

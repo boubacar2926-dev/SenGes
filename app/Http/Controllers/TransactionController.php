@@ -23,11 +23,10 @@ class TransactionController extends Controller
             $sort = 'created_at';
         }
 
+        $matchingProduitIds = Produit::searchIdsForUser(Auth::id(), $search);
+
         $transactions = Transaction::where('user_id', Auth::id())
-            ->when($search, fn ($query) => $query->whereHas(
-                'produit',
-                fn ($produitQuery) => $produitQuery->where('nom', 'like', '%'.$search.'%')
-            ))
+            ->when($matchingProduitIds !== null, fn ($query) => $query->whereIn('produit_id', $matchingProduitIds))
             ->orderBy($sort, $direction)
             ->paginate(10)
             ->withQueryString();
