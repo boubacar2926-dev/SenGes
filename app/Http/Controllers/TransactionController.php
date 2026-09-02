@@ -6,16 +6,48 @@ use App\Http\Requests\StoreTransactionRequest;
 use App\Http\Requests\UpdateTransactionRequest;
 use App\Models\Transaction;
 use App\Models\Produit;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class TransactionController extends Controller
 {
     // Afficher la liste des transactions
-    public function index()
+    public function index(Request $request)
     {
-        $transactions = Transaction::where('user_id', Auth::id())->paginate(10);
-        return view('transactions.index', compact('transactions'));
+        $search = $request->input('search');
+        $sort = $request->input('sort', 'created_at');
+        $direction = $request->input('direction') === 'asc' ? 'asc' : 'desc';
+
+        if (! in_array($sort, ['quantite', 'total', 'statut', 'created_at'], true)) {
+            $sort = 'created_at';
+        }
+
+        $transactions = Transaction::where('user_id', Auth::id())
+            ->when($search, fn ($query) => $query->whereHas(
+                'produit',
+                fn ($produitQuery) => $produitQuery->where('nom', 'like', '%'.$search.'%')
+            ))
+            ->orderBy($sort, $direction)
+            ->paginate(10)
+            ->withQueryString();
+
+        return view('transactions.index', [
+            'transactions' => $transactions,
+            'search' => $search,
+            'sort' => $sort,
+            'direction' => $direction,
+        ]);
+    }
+
+    // Afficher la facture imprimable d'une transaction
+    public function facture(Transaction $transaction)
+    {
+        $this->authorize('view', $transaction);
+
+        $transaction->load('produit');
+
+        return view('transactions.facture', compact('transaction'));
     }
 
     // Afficher le formulaire de création d'une transaction

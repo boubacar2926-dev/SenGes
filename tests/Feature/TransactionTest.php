@@ -100,6 +100,46 @@ test('supprimer (annuler) une transaction effectuée restitue le stock', functio
     expect($transaction->fresh()->statut)->toBe('annulée');
 });
 
+test('la recherche filtre les transactions par nom de produit', function () {
+    $commercant = User::factory()->commercant()->create();
+    $riz = Produit::factory()->for($commercant)->create(['nom' => 'Sac de riz', 'quantite' => 50]);
+    $huile = Produit::factory()->for($commercant)->create(['nom' => 'Huile végétale', 'quantite' => 50]);
+
+    $this->actingAs($commercant)->post('/transactions', ['produit_id' => $riz->id, 'quantite' => 1]);
+    $this->actingAs($commercant)->post('/transactions', ['produit_id' => $huile->id, 'quantite' => 1]);
+
+    $response = $this->actingAs($commercant)->get('/transactions?search=riz');
+
+    $response->assertSee('Sac de riz');
+    $response->assertDontSee('Huile végétale');
+});
+
+test('un commerçant peut consulter la facture de sa transaction', function () {
+    $commercant = User::factory()->commercant()->create();
+    $produit = Produit::factory()->for($commercant)->create(['nom' => 'Sac de riz', 'prix' => 100, 'quantite' => 50]);
+    $this->actingAs($commercant)->post('/transactions', ['produit_id' => $produit->id, 'quantite' => 2]);
+    $transaction = Transaction::first();
+
+    $response = $this->actingAs($commercant)->get("/transactions/{$transaction->id}/facture");
+
+    $response->assertOk();
+    $response->assertSee('FACTURE');
+    $response->assertSee('Sac de riz');
+    $response->assertSee('200'); // total
+});
+
+test('un commerçant ne peut pas consulter la facture de la transaction d’un autre', function () {
+    $proprietaire = User::factory()->commercant()->create();
+    $autre = User::factory()->commercant()->create();
+    $produit = Produit::factory()->for($proprietaire)->create(['quantite' => 50]);
+    $this->actingAs($proprietaire)->post('/transactions', ['produit_id' => $produit->id, 'quantite' => 1]);
+    $transaction = Transaction::first();
+
+    $response = $this->actingAs($autre)->get("/transactions/{$transaction->id}/facture");
+
+    $response->assertForbidden();
+});
+
 test('un commerçant ne peut pas modifier la transaction d’un autre', function () {
     $proprietaire = User::factory()->commercant()->create();
     $autre = User::factory()->commercant()->create();
