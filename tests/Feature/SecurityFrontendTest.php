@@ -117,3 +117,28 @@ test('la page d’accueil publique n’utilise pas de CDN Tailwind non versionn�
     $response->assertOk();
     expect($response->getContent())->not->toContain('cdn.tailwindcss.com');
 });
+
+// --- En-têtes de sécurité HTTP (protection clickjacking, MIME-sniffing, CSP) ---
+
+test('les en-têtes de sécurité HTTP sont présents sur toutes les réponses', function () {
+    $response = $this->get('/');
+
+    $response->assertOk();
+    $response->assertHeader('X-Frame-Options', 'DENY');
+    $response->assertHeader('X-Content-Type-Options', 'nosniff');
+    $response->assertHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    $response->assertHeader('Content-Security-Policy');
+    expect($response->headers->get('Content-Security-Policy'))
+        ->toContain("frame-ancestors 'none'")
+        ->toContain("object-src 'none'");
+});
+
+test('les en-têtes de sécurité sont aussi présents sur les pages authentifiées', function () {
+    $commercant = User::factory()->commercant()->create();
+
+    $response = $this->actingAs($commercant)->get('/dashboard');
+
+    $response->assertOk();
+    $response->assertHeader('X-Frame-Options', 'DENY');
+    $response->assertHeader('Content-Security-Policy');
+});
