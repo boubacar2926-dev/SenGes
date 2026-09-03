@@ -117,6 +117,9 @@
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 flex justify-center space-x-2">
+                                    <a href="{{ route('produits.reapprovisionnements.index', $produit) }}" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md shadow-md transition duration-300">
+                                        📦 Stock
+                                    </a>
                                     <a href="{{ route('produits.edit', $produit) }}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md shadow-md transition duration-300">
                                         ✏️ Modifier
                                     </a>
@@ -160,6 +163,9 @@
                             @endif
                         </p>
                         <div class="flex flex-col mt-4 space-y-2">
+                            <a href="{{ route('produits.reapprovisionnements.index', $produit) }}" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md shadow-md text-center">
+                                📦 Stock
+                            </a>
                             <a href="{{ route('produits.edit', $produit) }}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md shadow-md text-center">
                                 ✏️ Modifier
                             </a>

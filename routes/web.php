@@ -6,6 +6,7 @@ use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\ProduitController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ReapprovisionnementController;
 use App\Http\Controllers\StatistiqueController;
 use App\Http\Controllers\TransactionController;
 
@@ -70,6 +71,11 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 Route::middleware(['auth', 'role:commercant'])->group(function () {
     Route::get('produits/suggestions', [ProduitController::class, 'suggestions'])->name('produits.suggestions');
     Route::resource('produits', ProduitController::class)->except(['show']);
+
+    Route::get('produits/{produit}/reapprovisionnements', [ReapprovisionnementController::class, 'index'])
+        ->name('produits.reapprovisionnements.index');
+    Route::post('produits/{produit}/reapprovisionnements', [ReapprovisionnementController::class, 'store'])
+        ->name('produits.reapprovisionnements.store');
 
     // Routes pour les transactions
     Route::resource('transactions', TransactionController::class)->except(['show']);

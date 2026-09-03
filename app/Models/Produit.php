@@ -18,6 +18,11 @@ class Produit extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function reapprovisionnements()
+    {
+        return $this->hasMany(Reapprovisionnement::class);
+    }
+
     /**
      * Ids des produits d'un utilisateur dont le nom correspond à la
      * recherche, sans tenir compte de la casse ni des accents. Ne dépend
