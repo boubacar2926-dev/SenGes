@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestion PME Locales</title>
+    @include('partials.theme-script')
     @vite(['resources/css/app.css'])
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-white">
@@ -13,7 +14,8 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16 items-center">
                 <a href="#" class="text-2xl font-bold text-blue-600 dark:text-blue-400">🛒SenGes</a>
-                <div>
+                <div class="flex items-center">
+                    <x-theme-toggle class="mr-2" />
                     <a href="{{ route('login') }}" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md">Connexion</a>
                     <a href="{{ route('register') }}" class="ml-4 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md">Inscription</a>
                 </div>
