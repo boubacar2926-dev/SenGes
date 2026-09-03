@@ -15,7 +15,10 @@ return [
     |
     */
 
-    'default' => env('CACHE_DRIVER', 'file'),
+    // Même raison que config/session.php : le disque de production (Render)
+    // est éphémère, et le rate limiter de connexion (RateLimiter/cache)
+    // doit survivre aux redémarrages du conteneur pour rester efficace.
+    'default' => env('CACHE_DRIVER', env('APP_ENV') === 'production' ? 'database' : 'file'),
 
     /*
     |--------------------------------------------------------------------------

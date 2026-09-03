@@ -18,7 +18,13 @@ return [
     |
     */
 
-    'driver' => env('SESSION_DRIVER', 'file'),
+    // Le disque de l'hébergeur (Render) est éphémère : à chaque redéploiement
+    // ou redémarrage du conteneur, un pilote "file" perdrait toutes les
+    // sessions (tous les utilisateurs déconnectés) et le rate limiter de
+    // connexion serait réinitialisé. "database" persiste dans PostgreSQL/MySQL
+    // et survit aux redémarrages ; sans SESSION_DRIVER défini, ce choix ne
+    // s'applique qu'en production, pas en local.
+    'driver' => env('SESSION_DRIVER', env('APP_ENV') === 'production' ? 'database' : 'file'),
 
     /*
     |--------------------------------------------------------------------------

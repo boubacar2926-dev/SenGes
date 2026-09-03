@@ -114,6 +114,20 @@ test('le débogage est désactivé par défaut si APP_DEBUG n’est pas défini 
     expect($configSource)->toContain("env('APP_DEBUG', false)");
 });
 
+test('le pilote de session bascule sur "database" en production si non défini explicitement', function () {
+    // Le disque de l'hébergeur (Render) est éphémère : un pilote "file" non
+    // surchargé perdrait toutes les sessions à chaque redémarrage du conteneur.
+    $configSource = file_get_contents(config_path('session.php'));
+    expect($configSource)->toContain("env('SESSION_DRIVER', env('APP_ENV') === 'production' ? 'database' : 'file')");
+});
+
+test('le pilote de cache bascule sur "database" en production si non défini explicitement', function () {
+    // Même raison : le rate limiter de connexion (basé sur le cache) doit
+    // survivre aux redémarrages du conteneur pour rester efficace.
+    $configSource = file_get_contents(config_path('cache.php'));
+    expect($configSource)->toContain("env('CACHE_DRIVER', env('APP_ENV') === 'production' ? 'database' : 'file')");
+});
+
 test('CORS n’autorise pas les identifiants (cookies) cross-origin', function () {
     expect(config('cors.supports_credentials'))->toBeFalse();
 });
