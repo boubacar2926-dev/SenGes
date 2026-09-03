@@ -27,7 +27,11 @@ class UpdateTransactionRequest extends FormRequest
             // produit appartenant à un autre commerçant (vol/altération de stock).
             'produit_id' => [
                 'required',
-                Rule::exists('produits', 'id')->where(fn ($query) => $query->where('user_id', Auth::id())),
+                // whereNull('deleted_at') : voir StoreTransactionRequest, même
+                // raison (Rule::exists ignore le scope global de soft delete).
+                Rule::exists('produits', 'id')->where(
+                    fn ($query) => $query->where('user_id', Auth::id())->whereNull('deleted_at')
+                ),
             ],
             'quantite' => 'required|integer|min:1',
             // La colonne DB n'autorise que ces deux valeurs (voir migration

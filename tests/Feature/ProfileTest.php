@@ -64,7 +64,11 @@ test('user can delete their account', function () {
         ->assertRedirect('/');
 
     $this->assertGuest();
-    $this->assertNull($user->fresh());
+    // Soft delete : le compte n'est plus accessible (requêtes normales,
+    // connexion) mais la ligne est conservée pour ne pas perdre l'historique
+    // des produits/transactions liés à cet utilisateur.
+    $this->assertSoftDeleted($user);
+    $this->assertNull(User::find($user->id));
 });
 
 test('correct password must be provided to delete account', function () {
