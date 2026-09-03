@@ -19,7 +19,13 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['*'],
+    // Par défaut '*' (comportement historique de l'app). En production, définir
+    // CORS_ALLOWED_ORIGINS (liste séparée par des virgules, ex:
+    // "https://senges.onrender.com") pour restreindre les origines autorisées
+    // à appeler l'API. Sans cette variable, rien ne change.
+    'allowed_origins' => env('CORS_ALLOWED_ORIGINS')
+        ? array_map('trim', explode(',', env('CORS_ALLOWED_ORIGINS')))
+        : ['*'],
 
     'allowed_origins_patterns' => [],
 

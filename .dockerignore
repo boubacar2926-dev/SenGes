@@ -1,0 +1,51 @@
+# Ne jamais faire entrer de secrets ou de métadonnées Git dans l'image Docker.
+.git
+.gitignore
+.gitattributes
+.github
+
+# Secrets locaux : ne doivent jamais atterrir dans une image (a fortiori si elle
+# est poussée vers un registre). Les vraies valeurs sont injectées par les
+# variables d'environnement de l'hébergeur (Render), pas par le build.
+.env
+.env.*
+!.env.example
+
+# Dépendances : réinstallées proprement dans l'image par composer/npm,
+# on évite de copier des builds locaux (autre OS, versions dev, node_modules
+# volumineux) qui pourraient masquer un problème ou ralentir le build.
+/vendor
+/node_modules
+
+# Artefacts générés localement, reconstruits par le Dockerfile (npm run build).
+/public/build
+/public/hot
+/public/storage
+
+# Logs, caches et fichiers de session locaux : jamais utiles dans l'image et
+# potentiellement porteurs de données sensibles issues de l'environnement local.
+/storage/logs/*.log
+/storage/framework/cache/data/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+/storage/framework/testing/*
+!/storage/**/.gitignore
+
+# IDE / outillage local.
+.idea
+.fleet
+.vscode
+
+# Tests et éditeur — non nécessaires à l'exécution de l'application en prod.
+/tests
+.editorconfig
+.phpunit.cache
+.phpunit.result.cache
+phpunit.xml
+
+# Divers
+npm-debug.log
+yarn-error.log
+Homestead.json
+Homestead.yaml
+README.md
