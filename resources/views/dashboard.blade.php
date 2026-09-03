@@ -8,6 +8,12 @@
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
 
+            <!-- Revenu du jour -->
+            <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6 text-center mb-6">
+                <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300">📅 Revenu du jour</h3>
+                <p class="text-2xl font-bold text-blue-500 mt-2">{{ number_format($revenuAujourdhui, 0, ',', ' ') }} FCFA</p>
+            </div>
+
             <!-- Graphique des revenus -->
             <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
                 <h3 class="text-lg font-bold mb-4">Revenus des 7 derniers jours</h3>

@@ -12,6 +12,12 @@ class DashboardController extends Controller
     {
         $userId = Auth::id();
 
+        // Revenu du jour (hors transactions annulées)
+        $revenuAujourdhui = Transaction::where('user_id', $userId)
+            ->where('statut', 'effectuée')
+            ->whereDate('created_at', today())
+            ->sum('total');
+
         // Récupérer les revenus des 7 derniers jours (hors transactions annulées)
         $revenusParJour = Transaction::where('user_id', $userId)
             ->where('statut', 'effectuée')
@@ -31,7 +37,7 @@ class DashboardController extends Controller
             ->with('produit')
             ->get();
 
-        return view('dashboard', compact('revenusParJour', 'produitsPopulaires'));
+        return view('dashboard', compact('revenuAujourdhui', 'revenusParJour', 'produitsPopulaires'));
     }
 }
 

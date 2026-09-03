@@ -37,6 +37,34 @@ test('le nombre de transactions sur les statistiques exclut les annulées', func
     $this->actingAs($commercant)->get('/statistiques')->assertSee('>0<', false);
 });
 
+test('le dashboard affiche le revenu du jour', function () {
+    $commercant = User::factory()->commercant()->create();
+    $produit = Produit::factory()->for($commercant)->create(['prix' => 1500, 'quantite' => 50]);
+
+    $this->actingAs($commercant)->post('/transactions', ['items' => [['produit_id' => $produit->id, 'quantite' => 2]]]);
+
+    $response = $this->actingAs($commercant)->get('/dashboard');
+
+    $response->assertOk();
+    $response->assertSee('Revenu du jour');
+    $response->assertSee('3 000 FCFA');
+});
+
+test('le revenu du jour du dashboard exclut une transaction annulée le même jour', function () {
+    $commercant = User::factory()->commercant()->create();
+    $produit = Produit::factory()->for($commercant)->create(['prix' => 1500, 'quantite' => 50]);
+
+    $this->actingAs($commercant)->post('/transactions', ['items' => [['produit_id' => $produit->id, 'quantite' => 2]]]);
+    $transaction = Transaction::first();
+    $this->actingAs($commercant)->delete("/transactions/{$transaction->id}");
+
+    $response = $this->actingAs($commercant)->get('/dashboard');
+
+    $response->assertOk();
+    $response->assertSee('Revenu du jour');
+    $response->assertDontSee('3 000 FCFA');
+});
+
 test('le revenu du dashboard exclut les transactions annulées', function () {
     $commercant = User::factory()->commercant()->create();
     $produit = Produit::factory()->for($commercant)->create(['prix' => 500, 'quantite' => 50]);
