@@ -75,7 +75,10 @@ class TransactionController extends Controller
                     // ne vende le même stock en même temps. Si un même produit
                     // apparaît sur plusieurs lignes, chaque itération relit son
                     // stock déjà décrémenté par les lignes précédentes.
+                    // Re-scope explicitement par utilisateur en plus de la validation
+                    // (défense en profondeur contre une IDOR sur produit_id).
                     $produit = Produit::where('id', $item['produit_id'])
+                        ->where('user_id', Auth::id())
                         ->lockForUpdate()
                         ->firstOrFail();
 
@@ -130,8 +133,18 @@ class TransactionController extends Controller
 
                 // Verrouille l'ancien et le nouveau produit (peuvent être le même)
                 // pour éviter toute course avec une autre vente en cours.
+                // Re-scope explicitement par utilisateur en plus de la validation
+                // (défense en profondeur contre une IDOR sur produit_id).
                 $produitIds = collect([$ancienProduitId, $data['produit_id']])->unique();
-                $produits = Produit::whereIn('id', $produitIds)->lockForUpdate()->get()->keyBy('id');
+                $produits = Produit::whereIn('id', $produitIds)
+                    ->where('user_id', Auth::id())
+                    ->lockForUpdate()
+                    ->get()
+                    ->keyBy('id');
+
+                if ($produits->count() !== $produitIds->count()) {
+                    throw new \RuntimeException('Produit introuvable.');
+                }
 
                 // Si la transaction avait déjà décrémenté du stock, on le restitue
                 // avant d'appliquer les nouvelles valeurs, pour ne jamais décompter deux fois.
@@ -174,6 +187,7 @@ class TransactionController extends Controller
             // Restituer le stock si la transaction avait effectivement décrémenté le produit
             if ($transaction->statut === 'effectuée') {
                 Produit::where('id', $transaction->produit_id)
+                    ->where('user_id', Auth::id())
                     ->lockForUpdate()
                     ->increment('quantite', $transaction->quantite);
             }
