@@ -9,7 +9,7 @@ test('un compte suspendu pendant qu’il est connecté perd immédiatement l’a
 
     // Session valide établie avant la suspension.
     $this->actingAs($commercant)
-        ->get('/commercant/dashboard')
+        ->get('/produits')
         ->assertOk();
 
     $commercant->update(['suspended' => true]);
@@ -25,7 +25,7 @@ test('un compte suspendu pendant qu’il est connecté perd l’accès aux route
 
     $commercant->update(['suspended' => true]);
 
-    $response = $this->actingAs($commercant)->get('/commercant/dashboard');
+    $response = $this->actingAs($commercant)->get('/produits');
     $response->assertRedirect('/login');
     $this->assertGuest();
 });
