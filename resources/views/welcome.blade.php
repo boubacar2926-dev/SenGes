@@ -22,16 +22,22 @@
     </nav>
 
     <!-- Section principale -->
-    <section class="flex flex-col items-center text-center py-20 px-6">
-        <h1 class="text-4xl font-extrabold text-gray-900 dark:text-white sm:text-5xl">
-            Simplifiez la Gestion de votre PME
-        </h1>
-        <p class="mt-4 text-lg text-gray-600 dark:text-gray-300">
-            Gagnez du temps et améliorez la gestion de vos produits et transactions avec notre solution digitale.
-        </p>
-        <a href="{{ route('register') }}" class="mt-6 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg text-lg font-semibold shadow-md transition duration-300">
-            Commencer Maintenant 🚀
-        </a>
+    <section
+        class="relative flex flex-col items-center text-center py-32 px-6 bg-cover bg-center"
+        style="background-image: url('{{ asset('images/hero-marche.jpg') }}');"
+    >
+        <div class="absolute inset-0 bg-gray-900/70"></div>
+        <div class="relative">
+            <h1 class="text-4xl font-extrabold text-white sm:text-5xl">
+                Simplifiez la Gestion de votre PME
+            </h1>
+            <p class="mt-4 text-lg text-gray-200">
+                Gagnez du temps et améliorez la gestion de vos produits et transactions avec notre solution digitale.
+            </p>
+            <a href="{{ route('register') }}" class="mt-6 inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg text-lg font-semibold shadow-md transition duration-300">
+                Commencer Maintenant 🚀
+            </a>
+        </div>
     </section>
 
     <!-- Fonctionnalités -->
