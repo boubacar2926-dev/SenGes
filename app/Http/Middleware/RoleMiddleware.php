@@ -10,7 +10,7 @@ class RoleMiddleware
 {
     public function handle(Request $request, Closure $next, ...$roles)
     {
-        if (!Auth::check() || !in_array(Auth::user()->role, $roles)) {
+        if (!Auth::check() || Auth::user()->suspended || !in_array(Auth::user()->role, $roles)) {
             abort(403, 'Accès refusé');
         }
 
