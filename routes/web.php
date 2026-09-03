@@ -6,7 +6,6 @@ use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\ProduitController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\CommercantController;
 use App\Http\Controllers\StatistiqueController;
 use App\Http\Controllers\TransactionController;
 
@@ -54,6 +53,8 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     ]);
 
     Route::post('admin/users/{user}/suspend', [AdminUserController::class, 'suspend'])->name('admin.users.suspend');
+
+    Route::get('admin/journal', [AdminController::class, 'journal'])->name('admin.journal');
 });
 
 
@@ -67,7 +68,6 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 |
 */
 Route::middleware(['auth', 'role:commercant'])->group(function () {
-    Route::get('/commercant/dashboard', [CommercantController::class, 'index'])->name('commercant.dashboard');
     Route::get('produits/suggestions', [ProduitController::class, 'suggestions'])->name('produits.suggestions');
     Route::resource('produits', ProduitController::class)->except(['show']);
 

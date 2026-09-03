@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreCommercantRequest;
 use App\Http\Requests\UpdateCommercantRequest;
+use App\Models\AdminActionLog;
 use App\Models\User;
+use Illuminate\Support\Facades\Auth;
 
 class AdminUserController extends Controller
 {
@@ -23,13 +25,15 @@ class AdminUserController extends Controller
     {
         $data = $request->validated();
 
-        User::create([
+        $commercant = User::create([
             'name' => $data['name'],
             'email' => $data['email'],
             'password' => bcrypt($data['password']),
             'role' => 'commercant',
             'suspended' => false,
         ]);
+
+        AdminActionLog::record(Auth::user(), 'creation', $commercant);
 
         return redirect()->route('admin.users.index')->with('success', 'Commerçant ajouté avec succès.');
     }
@@ -48,7 +52,15 @@ class AdminUserController extends Controller
             abort(403);
         }
 
+        $avant = $user->only(['name', 'email']);
         $user->update($request->validated());
+
+        $changements = array_diff_assoc($user->only(['name', 'email']), $avant);
+        $details = $changements
+            ? 'Modifié : '.implode(', ', array_map(fn ($champ, $val) => "{$champ} → {$val}", array_keys($changements), $changements))
+            : null;
+
+        AdminActionLog::record(Auth::user(), 'modification', $user, $details);
 
         return redirect()->route('admin.users.index')->with('success', 'Commerçant mis à jour.');
     }
@@ -58,6 +70,8 @@ class AdminUserController extends Controller
         if ($user->role !== 'commercant') {
             abort(403);
         }
+
+        AdminActionLog::record(Auth::user(), 'suppression', $user);
 
         $user->delete();
         return redirect()->route('admin.users.index')->with('success', 'Commerçant supprimé.');
@@ -70,6 +84,8 @@ class AdminUserController extends Controller
         }
 
         $user->update(['suspended' => !$user->suspended]);
+
+        AdminActionLog::record(Auth::user(), $user->suspended ? 'suspension' : 'reactivation', $user);
 
         return redirect()->route('admin.users.index')->with('success', 'Le statut du commerçant a été mis à jour.');
     }

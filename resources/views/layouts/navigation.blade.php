@@ -39,6 +39,10 @@
                             {{ __('Statistiques') }}
                         </x-nav-link>
 
+                        <x-nav-link :href="route('admin.journal')" :active="request()->routeIs('admin.journal')">
+                            {{ __('Journal') }}
+                        </x-nav-link>
+
                     @endif
                 </div>
             </div>
@@ -120,6 +124,10 @@
                 
                 <x-responsive-nav-link :href="route('admin.dashboard')" :active="request()->routeIs('admin.dashboard')">
                     {{ __('Statistiques') }}
+                </x-responsive-nav-link>
+
+                <x-responsive-nav-link :href="route('admin.journal')" :active="request()->routeIs('admin.journal')">
+                    {{ __('Journal') }}
                 </x-responsive-nav-link>
 
             @endif
