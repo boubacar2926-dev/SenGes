@@ -13,15 +13,16 @@ class StatistiqueController extends Controller
     {
         $userId = Auth::id();
 
-        // Total des ventes
-        $totalVentes = Transaction::where('user_id', $userId)->sum('total');
+        // Total des ventes (les transactions annulées ne comptent pas comme des ventes)
+        $totalVentes = Transaction::where('user_id', $userId)->where('statut', 'effectuée')->sum('total');
 
-        // Nombre total de transactions
-        $nombreTransactions = Transaction::where('user_id', $userId)->count();
+        // Nombre total de transactions effectuées
+        $nombreTransactions = Transaction::where('user_id', $userId)->where('statut', 'effectuée')->count();
 
         // Produits les plus vendus
         $produitsPopulaires = Transaction::select('produit_id')
             ->where('user_id', $userId)
+            ->where('statut', 'effectuée')
             ->groupBy('produit_id')
             ->selectRaw('produit_id, SUM(quantite) as total_quantite')
             ->orderByDesc('total_quantite')

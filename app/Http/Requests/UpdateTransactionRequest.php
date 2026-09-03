@@ -30,7 +30,9 @@ class UpdateTransactionRequest extends FormRequest
                 Rule::exists('produits', 'id')->where(fn ($query) => $query->where('user_id', Auth::id())),
             ],
             'quantite' => 'required|integer|min:1',
-            'statut' => 'required|in:en attente,effectuée,annulée',
+            // La colonne DB n'autorise que ces deux valeurs (voir migration
+            // create_transactions_table) ; "en attente" n'existe pas côté DB.
+            'statut' => 'required|in:effectuée,annulée',
         ];
     }
 }

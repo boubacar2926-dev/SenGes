@@ -13,8 +13,8 @@ class AdminController extends Controller
     {
         $totalCommercants = User::where('role', 'commercant')->count();
         $totalProduits = Produit::count();
-        $totalTransactions = Transaction::count();
-        $revenuTotal = Transaction::sum('total');
+        $totalTransactions = Transaction::where('statut', 'effectuée')->count();
+        $revenuTotal = Transaction::where('statut', 'effectuée')->sum('total');
 
         return view('admin.dashboard', compact('totalCommercants', 'totalProduits', 'totalTransactions', 'revenuTotal'));
     }

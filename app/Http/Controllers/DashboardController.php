@@ -12,8 +12,9 @@ class DashboardController extends Controller
     {
         $userId = Auth::id();
 
-        // Récupérer les revenus des 7 derniers jours
+        // Récupérer les revenus des 7 derniers jours (hors transactions annulées)
         $revenusParJour = Transaction::where('user_id', $userId)
+            ->where('statut', 'effectuée')
             ->where('created_at', '>=', now()->subDays(7))
             ->selectRaw('DATE(created_at) as date, SUM(total) as total')
             ->groupBy('date')
@@ -22,6 +23,7 @@ class DashboardController extends Controller
 
         // Récupérer les produits les plus vendus
         $produitsPopulaires = Transaction::where('user_id', $userId)
+            ->where('statut', 'effectuée')
             ->selectRaw('produit_id, SUM(quantite) as total_vendu')
             ->groupBy('produit_id')
             ->orderByDesc('total_vendu')
