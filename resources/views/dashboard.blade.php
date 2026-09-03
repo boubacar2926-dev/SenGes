@@ -23,8 +23,8 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
+      document.addEventListener('DOMContentLoaded', () => {
         const ctx1 = document.getElementById('revenuChart').getContext('2d');
         const ctx2 = document.getElementById('produitsChart').getContext('2d');
 
@@ -32,10 +32,10 @@
         const revenuChart = new Chart(ctx1, {
             type: 'line',
             data: {
-                labels: {!! json_encode($revenusParJour->pluck('date')) !!},
+                labels: {!! json_encode($revenusParJour->pluck('date'), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!},
                 datasets: [{
                     label: 'Revenu (FCFA)',
-                    data: {!! json_encode($revenusParJour->pluck('total')) !!},
+                    data: {!! json_encode($revenusParJour->pluck('total'), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!},
                     borderColor: '#1d4ed8', // Bleu 700 (mode clair)
                     fill: false
                 }]
@@ -46,10 +46,10 @@
         const produitsChart = new Chart(ctx2, {
             type: 'bar',
             data: {
-                labels: {!! json_encode($produitsPopulaires->pluck('produit.nom')) !!},
+                labels: {!! json_encode($produitsPopulaires->pluck('produit.nom'), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!},
                 datasets: [{
                     label: 'Quantité Vendue',
-                    data: {!! json_encode($produitsPopulaires->pluck('total_vendu')) !!},
+                    data: {!! json_encode($produitsPopulaires->pluck('total_vendu'), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!},
                     backgroundColor: '#1d4ed8', // Bleu 700 (mode clair)
                     borderColor: '#1d4ed8', // Bleu 700 (mode clair)
                     borderWidth: 1
@@ -88,5 +88,6 @@
             attributes: true,
             attributeFilter: ['class']
         });
+      });
     </script>
 </x-app-layout>
