@@ -76,6 +76,10 @@
                     <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg overflow-hidden">
                         <div class="flex flex-wrap items-center justify-between gap-2 px-6 py-3 bg-gray-100 dark:bg-gray-700">
                             <div class="text-sm text-gray-600 dark:text-gray-300">
+                                @if ($premiereLigne->numero_facture)
+                                    <span class="font-semibold">Facture #{{ str_pad($premiereLigne->numero_facture, 6, '0', STR_PAD_LEFT) }}</span>
+                                    ·
+                                @endif
                                 {{ $premiereLigne->created_at->format('d/m/Y H:i') }}
                                 · {{ $lignes->count() }} {{ \Illuminate\Support\Str::plural('produit', $lignes->count()) }}
                                 · <span class="font-semibold text-blue-500">{{ number_format($lignes->sum('total'), 0, ',', ' ') }} FCFA</span>

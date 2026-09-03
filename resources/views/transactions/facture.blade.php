@@ -3,7 +3,8 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Facture #{{ str_pad($transactions->min('id'), 6, '0', STR_PAD_LEFT) }} — {{ config('app.name') }}</title>
+    @php($numeroAffiche = $transactions->first()->numero_facture ?? $transactions->min('id'))
+    <title>Facture #{{ str_pad($numeroAffiche, 6, '0', STR_PAD_LEFT) }} — {{ config('app.name') }}</title>
     @vite(['resources/css/app.css'])
     <style>
         @media print {
@@ -30,7 +31,7 @@
                 </div>
                 <div class="text-right">
                     <h2 class="text-xl font-semibold text-gray-800">FACTURE</h2>
-                    <p class="text-sm text-gray-500">N° {{ str_pad($transactions->min('id'), 6, '0', STR_PAD_LEFT) }}</p>
+                    <p class="text-sm text-gray-500">N° {{ str_pad($numeroAffiche, 6, '0', STR_PAD_LEFT) }}</p>
                     <p class="text-sm text-gray-500">{{ $transactions->first()->created_at->format('d/m/Y') }}</p>
                 </div>
             </div>

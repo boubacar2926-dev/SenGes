@@ -6,6 +6,7 @@ use App\Http\Requests\StoreTransactionRequest;
 use App\Http\Requests\UpdateTransactionRequest;
 use App\Models\Transaction;
 use App\Models\Produit;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -70,6 +71,13 @@ class TransactionController extends Controller
 
         try {
             DB::transaction(function () use ($items, $groupeId) {
+                // Verrouille le compteur du commerçant pour attribuer un numéro
+                // de facture séquentiel (#1, #2, ...) sans doublon possible en
+                // cas de deux ventes concurrentes du même commerçant.
+                $user = User::where('id', Auth::id())->lockForUpdate()->firstOrFail();
+                $numeroFacture = $user->next_invoice_number;
+                $user->increment('next_invoice_number');
+
                 foreach ($items as $item) {
                     // Verrouille la ligne pour éviter qu'une requête concurrente
                     // ne vende le même stock en même temps. Si un même produit
@@ -93,6 +101,7 @@ class TransactionController extends Controller
                         'total' => $produit->prix * $item['quantite'],
                         'statut' => 'effectuée',
                         'groupe_id' => $groupeId,
+                        'numero_facture' => $numeroFacture,
                     ]);
 
                     $produit->decrement('quantite', $item['quantite']);
