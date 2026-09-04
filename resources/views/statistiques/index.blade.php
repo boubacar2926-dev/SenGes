@@ -36,7 +36,7 @@
                         <tbody class="divide-y divide-gray-200 dark:divide-gray-600">
                             @foreach ($produitsPopulaires as $produit)
                                 <tr class="hover:bg-gray-100 dark:hover:bg-gray-700 transition duration-200">
-                                    <td class="px-6 py-4">{{ $produit->produit->nom }}</td>
+                                    <td class="px-6 py-4 text-gray-800 dark:text-gray-200">{{ $produit->produit->nom }}</td>
                                     <td class="px-6 py-4 text-center font-semibold text-blue-500">{{ $produit->total_quantite }}</td>
                                 </tr>
                             @endforeach
