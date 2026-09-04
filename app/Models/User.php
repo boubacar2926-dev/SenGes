@@ -2,14 +2,20 @@
 
 namespace App\Models;
 
-use Illuminate\Contracts\Auth\MustVerifyEmail;
+// MustVerifyEmail désactivé volontairement (2026-09-04) : aucun service
+// d'envoi d'email n'est configuré en production (MAIL_MAILER=smtp sans
+// serveur SMTP fonctionnel derrière), donc l'activer fait planter
+// l'inscription (l'email de vérification tente d'être envoyé en
+// synchrone et échoue). Ne pas réactiver `implements MustVerifyEmail`
+// sans avoir d'abord branché un vrai service SMTP (Brevo, Gmail...) et
+// vérifié l'envoi en prod.
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
-class User extends Authenticatable implements MustVerifyEmail
+class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
 
