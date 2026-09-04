@@ -121,11 +121,16 @@ test('le pilote de session bascule sur "database" en production si non défini e
     expect($configSource)->toContain("env('SESSION_DRIVER', env('APP_ENV') === 'production' ? 'database' : 'file')");
 });
 
-test('le pilote de cache bascule sur "database" en production si non défini explicitement', function () {
-    // Même raison : le rate limiter de connexion (basé sur le cache) doit
-    // survivre aux redémarrages du conteneur pour rester efficace.
+test('le pilote de cache reste "file" même en production (pas de driver "database")', function () {
+    // Contrairement aux sessions, le cache ne doit jamais basculer sur
+    // "database" automatiquement : Illuminate\Cache\DatabaseStore n'est pas
+    // compatible avec PostgreSQL sous contention (SQLSTATE 25P02, transaction
+    // avortée), ce qui fait planter en 500 toute route utilisant throttle/
+    // RateLimiter. Perdre le compteur anti-spam au redémarrage du conteneur
+    // est sans conséquence, contrairement à perdre les sessions.
     $configSource = file_get_contents(config_path('cache.php'));
-    expect($configSource)->toContain("env('CACHE_DRIVER', env('APP_ENV') === 'production' ? 'database' : 'file')");
+    expect($configSource)->toContain("env('CACHE_DRIVER', 'file')");
+    expect($configSource)->not->toContain("APP_ENV") ;
 });
 
 test('CORS n’autorise pas les identifiants (cookies) cross-origin', function () {

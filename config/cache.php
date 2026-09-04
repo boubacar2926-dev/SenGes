@@ -15,10 +15,16 @@ return [
     |
     */
 
-    // Même raison que config/session.php : le disque de production (Render)
-    // est éphémère, et le rate limiter de connexion (RateLimiter/cache)
-    // doit survivre aux redémarrages du conteneur pour rester efficace.
-    'default' => env('CACHE_DRIVER', env('APP_ENV') === 'production' ? 'database' : 'file'),
+    // Contrairement aux sessions (voir config/session.php), le cache reste
+    // sur fichier même en production : le driver "database" y a été essayé
+    // puis abandonné (2026-09-03) car Illuminate\Cache\DatabaseStore
+    // n'est pas compatible avec PostgreSQL sous contention — son motif
+    // add() (insert, capture l'erreur de doublon, puis continue) laisse la
+    // transaction Postgres "avortée" (SQLSTATE 25P02), ce qui faisait
+    // planter en 500 toute route utilisant throttle/RateLimiter (ex:
+    // inscription). Perdre le compteur anti-spam au redémarrage du
+    // conteneur est sans conséquence, contrairement à perdre les sessions.
+    'default' => env('CACHE_DRIVER', 'file'),
 
     /*
     |--------------------------------------------------------------------------
